@@ -762,6 +762,242 @@ The Kubernetes Deployment and Services were successfully configured using YAML m
 ![NGINX](https://raw.github.com/rims786ha-spec/RIMSHAN-CL-CY-002-COURSE-WORK/main/Screenshot%20From%202026-08-11%2023-59-52.png)
 
 
+# Task 8: Use Kubernetes Secrets and Environment Variables
+
+## 1. Understanding Kubernetes ConfigMaps and Secrets
+
+Kubernetes ConfigMaps and Secrets are used to manage application configuration separately from container images and Deployment YAML files.
+
+**Important components used in this task:**
+
+- **Namespace:** A logical workspace used to organize Kubernetes resources. I created the `secrets-lab` namespace.
+- **ConfigMap:** Stores non-sensitive configuration data such as application settings and AWS region.
+- **Secret:** Stores sensitive information such as AWS access keys and session tokens.
+- **Deployment:** Manages application Pods and maintains the desired number of replicas.
+- **Environment Variables:** Allow containers to access configuration and credentials at runtime.
+- **Volume Mount:** Makes ConfigMap data available as files inside a container.
+
+## 2. Creating and Applying the ConfigMap
+
+Created a ConfigMap named `app-config` in the `secrets-lab` namespace.
+
+The ConfigMap contained application configuration, including `APP_NAME`, `APP_ENV`, and `AWS_DEFAULT_REGION`. The AWS region was configured as `ap-south-1`.
+
+Created a Deployment named `config-demo` using the `nginx:stable` image. Configured the Deployment to consume ConfigMap values through environment variables and mount the ConfigMap as a read-only volume at `/etc/app-config`.
+
+During configuration, I encountered a volume mounting error because the volume referenced in `volumeMounts` was not defined under the Pod's `volumes` section. I corrected the YAML and successfully applied the Deployment.
+![ConfigMap](https://raw.github.com/rims786ha-spec/RIMSHAN-CL-CY-002-COURSE-WORK/main/Screenshot%20From%202026-10-02%2013-24-20.png)
+
+## 3. Creating the Kubernetes Secret
+
+Created a Kubernetes Secret named `aws-credentials` to store AWS credentials without hardcoding them into the application configuration.
+
+The Secret contained the following credentials:
+
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `AWS_SESSION_TOKEN`
+
+I updated the credentials after encountering an authentication error with my previous AWS account.
+
+Verified the AWS credentials using the AWS CLI command:
+
+```bash
+aws sts get-caller-identity
+```
+
+The command successfully returned the AWS identity associated with the configured credentials.
+
+## 4. Configuring Environment Variables
+
+Configured Kubernetes environment variables to obtain AWS credentials from the `aws-credentials` Secret using `secretKeyRef`.
+
+The AWS region was provided through the ConfigMap.
+
+This allowed the application container to access the required configuration and AWS credentials without directly hardcoding sensitive values in the Deployment.
+
+## 5. Testing AWS S3 Access from Kubernetes
+
+Created a temporary Pod named `aws-cli-test` using the `amazon/aws-cli` container image.
+
+Configured the Pod to consume AWS credentials from the Kubernetes Secret as environment variables.
+
+Initially, the AWS CLI returned an `InvalidClientTokenId` error due to invalid credentials. After updating the credentials and Kubernetes Secret, the authentication issue was resolved.
+
+Used the AWS CLI to access Amazon S3 from inside the Kubernetes Pod. The test successfully listed the `s3-test.txt` file stored in the S3 bucket.
+
+This verified that the Kubernetes Pod could authenticate with AWS and access S3 using credentials provided through the Kubernetes Secret.
+
+## 6. Verifying the Deployment
+
+Checked the Deployment status using:
+
+```bash
+kubectl get deployments -n secrets-lab
+```
+
+The `config-demo` Deployment showed **1/1 replicas ready and available**.
+
+Verified the Secret references in the Deployment using:
+
+```bash
+kubectl get deployment config-demo -n secrets-lab \
+-o jsonpath='{range .spec.template.spec.containers[*].env[*]}{.name}{" : "}{.valueFrom.secretKeyRef.name}{"\n"}{end}'
+```
+
+The output confirmed that `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_SESSION_TOKEN` referenced the `aws-credentials` Secret.
+
+Also verified that the ConfigMap was mounted inside the Nginx container and that its configuration could be read from `/etc/app-config`.
+
+![Secret](https://raw.github.com/rims786ha-spec/RIMSHAN-CL-CY-002-COURSE-WORK/main/Screenshot%20From%202026-10-02%2013-29-02.png)
+![](https://raw.github.com/rims786ha-spec/RIMSHAN-CL-CY-002-COURSE-WORK/main/Screenshot%20From%202026-10-02%2013-29-40.png)
+
+## Outcome
+
+Successfully created and applied a Kubernetes ConfigMap and Secret, configured a Deployment to use environment variables and mounted configuration files, and verified the Deployment status. Tested AWS authentication from a Kubernetes Pod and successfully accessed Amazon S3 using credentials stored in a Kubernetes Secret.
+
+This task demonstrated how to separate sensitive credentials from application configuration and securely provide them to Kubernetes workloads. The S3 file was uploaded separately from the Ubuntu terminal, while the Kubernetes Pod was used to verify S3 access.
+
+# Task: Deploy an Application to Push Files from Kubernetes to AWS S3
+
+## 1. Objective
+
+To build and containerize a file-upload web application, deploy it on Minikube using Kubernetes, securely provide AWS credentials through Kubernetes Secrets, and upload files to an Amazon S3 bucket. This task integrates Docker, Kubernetes, AWS IAM, S3, and Secrets into a complete cloud deployment pipeline.
+
+## 2. Technologies Used
+
+- **Python Flask:** To develop the file-upload web application.
+- **Docker:** To containerize the application.
+- **Kubernetes:** To deploy and manage the application.
+- **Minikube:** To run a local Kubernetes cluster.
+- **Kubernetes Secrets:** To store AWS credentials and inject them into the application.
+- **AWS IAM:** To provide credentials and permissions for accessing AWS services.
+- **Amazon S3:** To store uploaded files.
+- **Boto3:** Python SDK used by the backend to communicate with AWS S3.
+
+## 3. Building the File-Upload Application
+
+Developed a simple web application using Flask with a file picker and an Upload button. The backend receives the selected file and uses the Boto3 library to upload it to the configured Amazon S3 bucket.
+
+The application was tested locally, and files were successfully uploaded to S3.
+
+## 4. Containerizing the Application Using Docker
+
+Created a Docker image of the Flask application to package the application code, dependencies, and runtime environment.
+
+Built the Docker image using the following command:
+
+```bash
+docker build -t s3-file-upload:1.0 .
+```
+
+The image was tested by running the application inside a Docker container. The file-upload functionality was verified successfully.
+
+## 5. Loading the Image into Minikube
+
+Started Minikube and loaded the locally built Docker image into its environment.
+
+```bash
+minikube status
+minikube start
+minikube image load s3-file-upload:1.0
+```
+
+Verified that the image was available inside Minikube.
+
+```bash
+minikube image ls | grep s3-file-upload
+```
+
+This allowed Kubernetes to use the local image without downloading it from a remote container registry.
+
+## 6. Creating Kubernetes Secrets
+
+Created a Kubernetes Secret named `s3-aws-credentials` in the `secrets-lab` namespace to store the AWS access key ID and secret access key.
+
+```bash
+kubectl create secret generic s3-aws-credentials \
+  -n secrets-lab \
+  --from-literal=AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
+  --from-literal=AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
+```
+
+Updated the existing Secret with the correct credential values and verified it using:
+
+```bash
+kubectl describe secret s3-aws-credentials -n secrets-lab
+```
+
+Both credential entries were confirmed to contain nonzero values. The credentials were kept separate from the application code and Docker image.
+
+## 7. Deploying the Application on Kubernetes
+
+Created a `deployment.yaml` file to define the application Deployment.
+
+The configuration specified the Docker image, one replica, container port 5000, and the environment variables required by the application. AWS credentials were injected using Kubernetes `secretKeyRef`.
+
+The image pull policy was set to `Never` because the image was already loaded into Minikube.
+
+Applied the Deployment:
+
+```bash
+kubectl apply -f deployment.yaml
+```
+
+Verified the Deployment and Pod:
+
+```bash
+kubectl get deployments -n secrets-lab
+kubectl get pods -n secrets-lab
+kubectl rollout status deployment/s3-file-upload -n secrets-lab
+```
+
+The application was successfully deployed and its Pod was verified.
+
+## 8. Exposing the Application Through a Kubernetes Service
+
+Created a NodePort Service to make the application accessible through a browser.
+
+```bash
+kubectl expose deployment s3-file-upload \
+  --name=s3-file-upload-service \
+  --type=NodePort \
+  --port=80 \
+  --target-port=5000 \
+  -n secrets-lab
+```
+
+Retrieved the application URL using:
+
+```bash
+minikube service s3-file-upload-service \
+  -n secrets-lab --url
+```
+
+Opened the generated URL in a web browser and accessed the file-upload interface.
+
+## 9. Uploading and Verifying Files in Amazon S3
+
+Selected a test file through the application's web interface and clicked the Upload button.
+
+The Flask backend received the file and used Boto3, along with the AWS credentials injected by Kubernetes, to upload it to the configured S3 bucket.
+
+The application displayed a successful upload message. The uploaded object was then verified using the AWS CLI:
+
+```bash
+aws s3 ls s3://marvel-task-2026-1/ --recursive
+```
+
+The uploaded file appeared in the S3 bucket, confirming that the complete upload process worked successfully.
+
+## 10. Outcome
+
+Successfully built and containerized a Flask file-upload application, deployed it on Minikube, configured Kubernetes Secrets for AWS credentials, and exposed the application through a NodePort Service. Files were uploaded through the web interface and verified in Amazon S3.
+![](https://raw.github.com/rims786ha-spec/RIMSHAN-CL-CY-002-COURSE-WORK/main/Screenshot%20From%202026-10-02%2013-11-09.png) 
+![](https://raw.github.com/rims786ha-spec/RIMSHAN-CL-CY-002-COURSE-WORK/main/Screenshot%20From%202026-10-02%2013-11-21.png)
+![](https://raw.github.com/rims786ha-spec/RIMSHAN-CL-CY-002-COURSE-WORK/main/Screenshot%20From%202026-10-02%2013-32-36.png)
+
+
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
