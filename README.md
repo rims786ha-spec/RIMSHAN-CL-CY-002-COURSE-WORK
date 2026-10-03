@@ -1,6 +1,151 @@
 # RIMSHAN-CL-CY-002-COURSE-WORK
 CL-CY-002-REPORT
 
+# Task 1: Git Version Control and Collaborative GitHub Workflow
+
+## 1. Understanding Git and Version Control
+
+Git is a distributed version control system used to track changes in source code and maintain different versions of a project. GitHub is a platform used to host Git repositories and collaborate with developers through branches and Pull Requests.
+
+Important concepts used in this task include repositories, commits, branches, remotes, Pull Requests, merge conflicts, rebase, revert, cherry-pick, and Git configuration.
+
+Git was verified using:
+
+```bash
+git --version
+```
+
+Git version used: `2.53.0`
+
+Git identity was configured using:
+
+```bash
+git config --global user.name "*****"
+git config --global user.email "*****"
+```
+
+Additional Git configurations and aliases were also created to customize the development workflow.
+
+## 2. Creating, Cloning and Managing the Repository
+
+Created a GitHub repository named `git-workflow-practice` and cloned it to the Ubuntu system using:
+
+```bash
+git clone <repository-url>
+cd git-workflow-practice
+```
+
+The remote repository was verified using:
+
+```bash
+git remote -v
+```
+
+A small project was created and modified locally to practise the Git workflow. The changes were checked, staged, committed, and pushed to GitHub using:
+
+```bash
+git status
+git diff
+git add .
+git commit -m "Add Git workflow revision notes"
+git push
+```
+
+This demonstrated the complete workflow from local development to the remote GitHub repository.
+
+## 3. Branching and Pull Requests
+
+A feature branch was created to keep development work separate from the `main` branch:
+
+```bash
+git switch -c feature/about-git
+```
+
+Changes were made on the feature branch and pushed to GitHub using:
+
+```bash
+git add .
+git commit -m "Add project description"
+git push -u origin feature/about-git
+```
+
+A Pull Request was created from the feature branch to the `main` branch. The changes were reviewed and merged successfully.
+
+The workflow followed was:
+
+```text
+Feature Branch → Commit → Push → Pull Request → Review → Merge
+```
+
+## 4. Merge Conflicts and Git Rebase
+
+A merge conflict was intentionally created by making different changes to the same part of a file in two branches. Git was unable to automatically combine the changes and marked the conflicting section.
+
+The conflict was identified using:
+
+```bash
+git status
+```
+
+The conflicting content was manually corrected and staged. Git rebase was then used to apply the feature branch changes on top of the latest `main` branch:
+
+```bash
+git rebase main
+```
+
+After resolving the conflict, the rebase was continued using:
+
+```bash
+git add <file>
+git rebase --continue
+```
+
+This provided practical understanding of merge conflicts, conflict resolution, and the use of Git rebase.
+![](https://raw.github.com/rims786ha-spec/RIMSHAN-CL-CY-002-COURSE-WORK/main/Screenshot%20From%202026-10-03%2007-33-21.png)
+
+## 5. Git Revert and Cherry-Pick
+
+The `git revert` command was practised to safely undo the changes introduced by an earlier commit:
+
+```bash
+git revert <commit-id>
+```
+
+Git created a new commit that reversed the changes while preserving the existing project history.
+
+The `git cherry-pick` command was also practised to apply a specific commit from another branch:
+
+```bash
+git cherry-pick <commit-id>
+```
+
+This demonstrated how an individual change can be transferred between branches without merging the complete branch.
+![](https://raw.github.com/rims786ha-spec/RIMSHAN-CL-CY-002-COURSE-WORK/main/Screenshot%20From%202026-10-03%2007-31-48.png)
+
+## 6. Customized Git Workflow
+
+Git configuration was customized using `git config`. The default branch was configured as `main`, and aliases were created for frequently used commands:
+
+```bash
+git config --global init.defaultBranch main
+git config --global alias.st status
+git config --global alias.br branch
+git config --global alias.cm "commit -m"
+git config --global alias.lg "log --oneline --graph --decorate --all"
+```
+
+These configurations simplified frequently used Git commands and created a customized Git workflow.
+![](https://raw.github.com/rims786ha-spec/RIMSHAN-CL-CY-002-COURSE-WORK/main/Screenshot%20From%202026-10-03%2007-30-51.png)
+
+## 7. Open-Source Contribution
+
+Contributed to the `lingdojo/kana-dojo` open-source project by adding a Japan-related fact through a fork, feature branch, commit, push, and Pull Request workflow.
+
+## 8. Outcome
+
+Successfully learned and practised Git version control and GitHub collaboration, including repository cloning, commits, remote repositories, branch management, Pull Requests, merge conflict resolution using rebase, `git revert`, `git cherry-pick`, customized Git configuration, and an open-source contribution.
+
+The task provided practical experience in managing project changes and following a collaborative Git workflow from local development to GitHub.
 
 # Task 2: Docker Basics and Container Management
 
@@ -858,7 +1003,7 @@ Successfully created and applied a Kubernetes ConfigMap and Secret, configured a
 
 This task demonstrated how to separate sensitive credentials from application configuration and securely provide them to Kubernetes workloads. The S3 file was uploaded separately from the Ubuntu terminal, while the Kubernetes Pod was used to verify S3 access.
 
-# Task: Deploy an Application to Push Files from Kubernetes to AWS S3
+# Task 9: Deploy an Application to Push Files from Kubernetes to AWS S3
 
 ## 1. Objective
 
